@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="显化">
+<meta name="theme-color" content="#0b0a0f">
+<meta name="format-detection" content="telephone=no">
+<title>显化</title>
+<style>
+:root{
+  --bg:#0b0a0f;
+  --ink:#f3ede2;
+  --ink-2:rgba(243,237,226,.64);
+  --ink-3:rgba(243,237,226,.38);
+  --gold:#dcc096;
+  --line:rgba(255,255,255,.09);
+  --serif:"Baskerville","Songti SC","STSongti-SC-Regular","STSong","Noto Serif CJK SC",serif;
+  --display:"Didot","Bodoni 72","Songti SC","STSong",serif;
+  --top:env(safe-area-inset-top,0px);
+  --bottom:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+[hidden]{display:none!important}
+html{background:var(--bg);-webkit-text-size-adjust:100%}
+body{
+  min-height:100dvh;background:var(--bg);color:var(--ink);
+  font-family:var(--serif);font-weight:400;line-height:1.6;
+  -webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;
+  -webkit-touch-callout:none;-webkit-user-select:none;user-select:none;overflow-x:hidden;
+}
+body.locked{overflow:hidden}
+button,textarea{font:inherit;color:inherit;background:none;border:0;outline:0;-webkit-appearance:none;appearance:none;border-radius:0}
+button{cursor:pointer}
+
+/* ---------- 背景光 ---------- */
+.sky{position:fixed;top:0;left:0;width:100%;height:100lvh;z-index:0;overflow:hidden;
+  background:radial-gradient(120% 70% at 50% 0%,#18131f 0%,#0b0a0f 62%)}
+.sky i{position:absolute;border-radius:50%;will-change:transform}
+.sky i:nth-child(1){width:480px;height:480px;left:-180px;top:-90px;
+  background:radial-gradient(circle,rgba(216,166,112,.55),rgba(216,166,112,0) 68%);animation:d1 28s ease-in-out infinite alternate}
+.sky i:nth-child(2){width:540px;height:540px;right:-240px;top:28%;
+  background:radial-gradient(circle,rgba(172,96,122,.48),rgba(172,96,122,0) 68%);animation:d2 34s ease-in-out infinite alternate}
+.sky i:nth-child(3){width:520px;height:520px;left:-160px;bottom:-180px;
+  background:radial-gradient(circle,rgba(98,86,172,.5),rgba(98,86,172,0) 68%);animation:d3 30s ease-in-out infinite alternate}
+.sky i:nth-child(4){width:240px;height:240px;right:-40px;bottom:12%;
+  background:radial-gradient(circle,rgba(242,222,190,.22),rgba(242,222,190,0) 70%);animation:d1 22s ease-in-out infinite alternate-reverse}
+@keyframes d1{to{transform:translate(70px,90px) scale(1.15)}}
+@keyframes d2{to{transform:translate(-90px,-70px) scale(.9)}}
+@keyframes d3{to{transform:translate(80px,-100px) scale(1.1)}}
+
+.scrim{position:fixed;top:0;left:0;right:0;height:calc(var(--top) + 18px);z-index:10;pointer-events:none;
+  -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
+  background:linear-gradient(rgba(11,10,15,.7),rgba(11,10,15,0));
+  -webkit-mask-image:linear-gradient(#000 55%,transparent);mask-image:linear-gradient(#000 55%,transparent)}
+
+/* ---------- 液态玻璃 ---------- */
+.glass{
+  position:relative;
+  background:linear-gradient(140deg,rgba(255,255,255,.11),rgba(255,255,255,.03) 60%,rgba(255,255,255,.06));
+  -webkit-backdrop-filter:blur(30px) saturate(180%);backdrop-filter:blur(30px) saturate(180%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.26),
+    inset 0 -1px 0 rgba(255,255,255,.05),
+    inset 0 0 28px rgba(255,255,255,.035),
+    0 24px 50px -24px rgba(0,0,0,.65);
+}
+.glass::before{
+  content:"";position:absolute;inset:0;border-radius:inherit;padding:1px;pointer-events:none;
+  background:linear-gradient(145deg,rgba(255,255,255,.55),rgba(255,255,255,.05) 32%,rgba(255,255,255,.02) 66%,rgba(255,255,255,.32));
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;mask-composite:exclude;
+}
+
+/* ---------- 布局 ---------- */
+.app{position:relative;z-index:1;max-width:440px;margin:0 auto;
+  padding:calc(var(--top) + 14px) 20px calc(var(--bottom) + 130px)}
+.view{display:none}
+.view.on{display:block;animation:rise .6s cubic-bezier(.2,.7,.2,1)}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}}
+
+.head{padding:24px 6px 12px}
+.back{font-size:14px;letter-spacing:.1em;color:var(--ink-2);margin-bottom:14px}
+.eyebrow{font-family:var(--display);font-size:13px;letter-spacing:.2em;color:var(--gold)}
+h1{font-size:46px;font-weight:300;letter-spacing:.1em;line-height:1.25;margin-top:10px}
+.sub{font-size:15px;color:var(--ink-2);letter-spacing:.06em;margin-top:6px}
+.sub b{font-family:var(--display);font-weight:400;font-size:18px;color:var(--ink);padding:0 3px}
+
+.card{padding:22px 22px 18px;border-radius:30px;margin-top:16px}
+.card-h{display:flex;align-items:baseline;gap:12px}
+.no{font-family:var(--display);font-size:13px;letter-spacing:.18em;color:var(--gold)}
+h2{font-size:22px;font-weight:400;letter-spacing:.16em}
+.hint{font-size:13.5px;color:var(--ink-3);letter-spacing:.05em;margin:4px 0 12px}
+
+textarea{display:block;width:100%;resize:none;overflow:hidden;font-size:17px;line-height:30px;letter-spacing:.03em;
+  caret-color:var(--gold);-webkit-user-select:text;user-select:text}
+textarea::placeholder{color:var(--ink-3)}
+.row{display:flex;gap:14px;align-items:flex-start;padding:11px 0;border-top:1px solid var(--line)}
+.row span{flex:none;font-size:15px;line-height:30px;color:var(--gold);opacity:.85}
+.free{border-top:1px solid var(--line);padding-top:12px}
+.free textarea{min-height:90px}
+.free.tall textarea{min-height:150px}
+
+.quote{padding:26px 26px 22px;border-radius:30px;text-align:center;margin-top:10px;cursor:pointer}
+.quote .mark{font-family:var(--display);font-size:44px;line-height:.6;color:var(--gold);opacity:.8;display:block;padding-top:14px}
+.quote .q{font-size:22px;line-height:1.75;letter-spacing:.08em;margin:6px 0 14px;transition:opacity .35s,filter .35s}
+.quote .q.out{opacity:0;filter:blur(6px)}
+.quote small{font-size:12px;letter-spacing:.24em;color:var(--ink-3)}
+
+.status{text-align:center;font-size:12.5px;letter-spacing:.2em;color:var(--ink-3);margin-top:22px}
+
+/* ---------- 信念 ---------- */
+.cta{display:flex;width:100%;align-items:center;justify-content:space-between;text-align:left;
+  padding:22px 24px;border-radius:30px;margin-top:10px;transition:transform .25s}
+.cta:active{transform:scale(.98)}
+.cta strong{display:block;font-weight:400;font-size:21px;letter-spacing:.14em}
+.cta em{display:block;font-style:normal;font-size:13px;letter-spacing:.08em;color:var(--ink-3);margin-top:4px}
+.cta .arrow{font-family:var(--display);font-size:26px;color:var(--gold)}
+.belief{padding:20px 22px 14px;border-radius:26px;margin-top:12px}
+.belief p{font-size:18px;line-height:1.75;letter-spacing:.05em}
+.meta{display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:10px;border-top:1px solid var(--line);
+  font-size:13px;letter-spacing:.08em;color:var(--ink-3)}
+.meta button{padding:4px 0 4px 16px}
+.add{padding:16px 22px 12px;border-radius:26px;margin-top:12px}
+.add div{text-align:right;margin-top:6px}
+.add button{font-size:15px;letter-spacing:.2em;color:var(--gold);padding:6px 0 6px 16px}
+
+/* ---------- 强化仪式 ---------- */
+.ritual{position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:space-between;
+  padding:calc(var(--top) + 22px) 32px calc(var(--bottom) + 46px);
+  background:rgba(9,8,13,.5);-webkit-backdrop-filter:blur(44px) saturate(160%);backdrop-filter:blur(44px) saturate(160%);
+  opacity:0;pointer-events:none;transition:opacity .5s;touch-action:none}
+.ritual.on{opacity:1;pointer-events:auto}
+.r-top{width:100%;display:flex;justify-content:space-between;align-items:center;font-size:14px;letter-spacing:.2em;color:var(--ink-2)}
+.r-top span{font-family:var(--display)}
+.r-top button{padding:8px 0 8px 20px}
+.r-text{font-size:30px;font-weight:300;line-height:1.8;letter-spacing:.1em;text-align:center;
+  transition:opacity .45s,transform .45s,filter .45s}
+.r-text.out{opacity:0;transform:translateY(10px);filter:blur(8px)}
+.r-foot{display:flex;flex-direction:column;align-items:center;gap:16px;min-height:150px;justify-content:flex-end}
+.hold{width:108px;height:108px;border-radius:50%;display:grid;place-items:center;touch-action:none;transition:transform .3s}
+.hold.holding{transform:scale(.93)}
+.hold svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
+.hold circle{fill:none;stroke:var(--gold);stroke-width:1.6;stroke-linecap:round;
+  stroke-dasharray:295.3;stroke-dashoffset:295.3;transition:stroke-dashoffset .35s ease}
+.hold.holding circle{stroke-dashoffset:0;transition:stroke-dashoffset 1.6s linear}
+.hold span{font-size:16px;letter-spacing:.3em;padding-left:.3em}
+.r-foot small{font-size:12.5px;letter-spacing:.2em;color:var(--ink-3)}
+.r-done{display:none;padding:16px 44px;border-radius:999px;font-size:16px;letter-spacing:.3em}
+.ritual.done .hold,.ritual.done .r-foot small{display:none}
+.ritual.done .r-done{display:block}
+
+/* ---------- 回顾 ---------- */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}
+.stat{padding:18px 6px 15px;border-radius:24px;text-align:center}
+.stat b{display:block;font-family:var(--display);font-weight:400;font-size:34px;line-height:1.15}
+.stat span{font-size:12px;letter-spacing:.22em;color:var(--ink-3)}
+.cal{padding:18px 14px 14px;border-radius:30px;margin-top:16px}
+.cal-h{display:flex;justify-content:space-between;align-items:center;padding:0 2px 12px}
+.cal-h strong{font-family:var(--display);font-weight:400;font-size:18px;letter-spacing:.12em}
+.cal-h button{width:40px;height:40px;font-family:var(--display);font-size:24px;color:var(--ink-2)}
+.cal-h button:disabled{opacity:.2}
+.wk,.grid{display:grid;grid-template-columns:repeat(7,1fr);text-align:center}
+.wk span{font-size:12px;color:var(--ink-3);padding-bottom:6px}
+.grid button{position:relative;width:100%;aspect-ratio:1;border-radius:50%;font-family:var(--display);font-size:16px;color:var(--ink-3)}
+.grid button.has{color:var(--ink)}
+.grid button.has::after{content:"";position:absolute;left:50%;bottom:6px;width:4px;height:4px;margin-left:-2px;border-radius:50%;background:var(--gold)}
+.grid button.today{box-shadow:inset 0 0 0 1px rgba(220,192,150,.65);color:var(--ink)}
+.grid button:disabled{opacity:.3}
+.note{text-align:center;font-size:12.5px;letter-spacing:.14em;color:var(--ink-3);margin-top:18px}
+.tools{display:flex;justify-content:center;gap:30px;margin-top:22px}
+.tools button{font-size:14px;letter-spacing:.14em;color:var(--ink-2);padding:6px 0;border-bottom:1px solid var(--line)}
+
+/* ---------- 底部导航 ---------- */
+.tabs{position:fixed;z-index:20;left:50%;bottom:max(22px,calc(var(--bottom) - 6px));transform:translateX(-50%);
+  display:flex;padding:6px;border-radius:999px;
+  background:linear-gradient(140deg,rgba(60,54,72,.42),rgba(30,26,38,.36));
+  transition:opacity .3s,transform .45s cubic-bezier(.2,.7,.2,1)}
+.tabs button{position:relative;z-index:1;width:88px;height:48px;font-size:16px;letter-spacing:.18em;padding-left:.18em;
+  color:var(--ink-2);transition:color .3s}
+.tabs button.on{color:var(--ink)}
+.pill{position:absolute;left:6px;top:6px;width:88px;height:48px;border-radius:999px;
+  background:linear-gradient(180deg,rgba(255,255,255,.22),rgba(255,255,255,.07));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.42),inset 0 -1px 0 rgba(255,255,255,.08),0 6px 16px rgba(0,0,0,.28);
+  transition:transform .55s cubic-bezier(.3,1.35,.45,1)}
+body.typing .tabs{opacity:0;pointer-events:none;transform:translate(-50%,40px)}
+
+@media (prefers-reduced-motion:reduce){.sky i,.view.on{animation:none}}
+</style>
+</head>
+<body>
+
+<div class="sky"><i></i><i></i><i></i><i></i></div>
+<div class="scrim"></div>
+
+<main class="app">
+
+  <!-- 今日 -->
+  <section class="view on" id="v-today">
+    <header class="head">
+      <button class="back" id="back" hidden>← 回到今天</button>
+      <p class="eyebrow" id="dateLine"></p>
+      <h1 id="greet"></h1>
+      <p class="sub" id="streakLine"></p>
+    </header>
+
+    <div class="quote glass" id="quoteCard">
+      <span class="mark">“</span>
+      <p class="q" id="quote"></p>
+      <small>今日信念 · 轻触更换</small>
+    </div>
+
+    <div class="card glass">
+      <div class="card-h"><span class="no">01</span><h2>感恩</h2></div>
+      <p class="hint">此刻，我真心感谢的三件事</p>
+      <div class="row"><span>一</span><textarea rows="1" data-f="g0" placeholder="我感谢……"></textarea></div>
+      <div class="row"><span>二</span><textarea rows="1" data-f="g1" placeholder="我感谢……"></textarea></div>
+      <div class="row"><span>三</span><textarea rows="1" data-f="g2" placeholder="我感谢……"></textarea></div>
+    </div>
+
+    <div class="card glass">
+      <div class="card-h"><span class="no">02</span><h2>显化</h2></div>
+      <p class="hint">用“已经发生”的语气，写下你要的生活</p>
+      <div class="free"><textarea rows="3" data-f="m" placeholder="我已经……"></textarea></div>
+    </div>
+
+    <div class="card glass">
+      <div class="card-h"><span class="no">03</span><h2>日记</h2></div>
+      <p class="hint">今天发生了什么，我感受到了什么</p>
+      <div class="free tall"><textarea rows="5" data-f="d" placeholder="今天……"></textarea></div>
+    </div>
+
+    <p class="status" id="status">落笔即自动保存</p>
+  </section>
+
+  <!-- 信念 -->
+  <section class="view" id="v-beliefs">
+    <header class="head">
+      <p class="eyebrow">每日诵读</p>
+      <h1>信念</h1>
+      <p class="sub">反复说给自己听的话，终会成真。</p>
+    </header>
+    <button class="cta glass" id="startRitual">
+      <span><strong id="ctaTitle">开始强化</strong><em id="ctaSub">逐条默念 · 长按确认</em></span>
+      <span class="arrow">→</span>
+    </button>
+    <div id="beliefList"></div>
+    <div class="add glass">
+      <textarea rows="1" id="newBelief" placeholder="写下一条新的信念……"></textarea>
+      <div><button id="addBelief">添加</button></div>
+    </div>
+  </section>
+
+  <!-- 回顾 -->
+  <section class="view" id="v-history">
+    <header class="head">
+      <p class="eyebrow">时间的证据</p>
+      <h1>回顾</h1>
+      <p class="sub">你写下的每一天，都算数。</p>
+    </header>
+    <div class="stats">
+      <div class="stat glass"><b id="sStreak">0</b><span>连续</span></div>
+      <div class="stat glass"><b id="sTotal">0</b><span>篇数</span></div>
+      <div class="stat glass"><b id="sAff">0</b><span>强化</span></div>
+    </div>
+    <div class="cal glass">
+      <div class="cal-h">
+        <button id="calPrev">‹</button><strong id="calTitle"></strong><button id="calNext">›</button>
+      </div>
+      <div class="wk"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div>
+      <div class="grid" id="calGrid"></div>
+    </div>
+    <p class="note">轻触任意一天，重读或补写</p>
+    <div class="tools">
+      <button id="exportBtn">导出备份</button>
+      <button id="importBtn">导入备份</button>
+      <input type="file" id="importFile" accept="application/json,.json" hidden>
+    </div>
+  </section>
+</main>
+
+<!-- 强化仪式 -->
+<div class="ritual" id="ritual">
+  <div class="r-top"><span id="rCount"></span><button id="rClose">结束</button></div>
+  <p class="r-text" id="rText"></p>
+  <div class="r-foot">
+    <button class="hold glass" id="hold">
+      <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="47"/></svg>
+      <span>长按</span>
+    </button>
+    <small>在心里默念一遍，然后长按确认</small>
+    <button class="r-done glass" id="rDone">合上</button>
+  </div>
+</div>
+
+<nav class="tabs glass" id="tabs">
+  <span class="pill" id="pill"></span>
+  <button data-go="today" class="on">今日</button>
+  <button data-go="beliefs">信念</button>
+  <button data-go="history">回顾</button>
+</nav>
+
+<script>
+(() => {
+  const KEY = 'xianhua.v1';
+  const DEFAULTS = [
+    '我值得拥有我所渴望的一切。',
+    '我想要的，也正在走向我。',
+    '我相信自己，也相信时间。',
+    '我所专注的，正在成长。'
+  ];
+  const WK = ['日','一','二','三','四','五','六'];
+  const $ = s => document.querySelector(s);
+  const $$ = s => [...document.querySelectorAll(s)];
+  const pad = n => String(n).padStart(2, '0');
+  const keyOf = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  const todayKey = () => keyOf(new Date());
+  const fromKey = k => { const [y, m, d] = k.split('-').map(Number); return new Date(y, m - 1, d); };
+
+  /* ---------- 数据 ---------- */
+  function load() {
+    try {
+      const o = JSON.parse(localStorage.getItem(KEY));
+      if (o && o.entries && Array.isArray(o.beliefs)) return Object.assign({ total: 0, last: '' }, o);
+    } catch (e) {}
+    return { entries: {}, beliefs: DEFAULTS.map((t, i) => ({ id: 'd' + i, text: t, n: 0 })), total: 0, last: '' };
+  }
+  let S = load();
+  let saveT = null;
+  function persist() {
+    clearTimeout(saveT); saveT = null;
+    try { localStorage.setItem(KEY, JSON.stringify(S)); return true; }
+    catch (e) { $('#status').textContent = '保存失败，请先导出备份'; return false; }
+  }
+  function scheduleSave() {
+    clearTimeout(saveT);
+    saveT = setTimeout(() => {
+      if (persist()) $('#status').textContent = '已保存 · ' + new Date().toTimeString().slice(0, 5);
+      renderStreak();
+    }, 300);
+  }
+  const blank = () => ({ g: ['', '', ''], m: '', d: '' });
+  const entry = k => S.entries[k] || blank();
+  const isEmpty = e => !(e.g.join('') + e.m + e.d).trim();
+  function streak() {
+    const d = new Date(); let n = 0;
+    if (!S.entries[keyOf(d)]) d.setDate(d.getDate() - 1);
+    while (S.entries[keyOf(d)]) { n++; d.setDate(d.getDate() - 1); }
+    return n;
+  }
+
+  /* ---------- 今日 ---------- */
+  let cur = todayKey(), follow = true, qOff = 0;
+  const fields = $$('#v-today textarea');
+  const grow = t => { t.style.height = 'auto'; t.style.height = t.scrollHeight + 'px'; };
+  const getF = (e, f) => f[0] === 'g' ? e.g[+f[1]] : e[f];
+  const setF = (e, f, v) => { if (f[0] === 'g') e.g[+f[1]] = v; else e[f] = v; };
+
+  function greeting() {
+    const h = new Date().getHours();
+    return h < 5 ? '夜深了' : h < 11 ? '早安' : h < 14 ? '午安' : h < 18 ? '下午好' : h < 23 ? '晚安' : '夜深了';
+  }
+  function renderStreak() {
+    const n = streak();
+    $('#streakLine').innerHTML = n ? `已连续书写 <b>${n}</b> 天` : '从今天开始，写下第一篇。';
+  }
+  function renderQuote() {
+    const L = S.beliefs, q = $('#quote');
+    if (!L.length) { q.textContent = '去「信念」写下属于你的第一句话。'; return; }
+    const d = fromKey(cur);
+    const doy = Math.floor((d - new Date(d.getFullYear(), 0, 0)) / 864e5);
+    q.textContent = L[(doy + qOff) % L.length].text;
+  }
+  function renderToday() {
+    const isToday = cur === todayKey(), d = fromKey(cur);
+    $('#back').hidden = isToday;
+    $('#dateLine').textContent = `${d.getFullYear()} 年 ${d.getMonth() + 1} 月 ${d.getDate()} 日 · 星期${WK[d.getDay()]}`;
+    $('#greet').textContent = isToday ? greeting() : '补记';
+    renderStreak(); renderQuote();
+    const e = entry(cur);
+    fields.forEach(t => { t.value = getF(e, t.dataset.f); grow(t); });
+  }
+  fields.forEach(t => t.addEventListener('input', () => {
+    const e = entry(cur);
+    setF(e, t.dataset.f, t.value);
+    if (isEmpty(e)) delete S.entries[cur]; else S.entries[cur] = e;
+    grow(t); scheduleSave();
+  }));
+  $('#quoteCard').addEventListener('click', () => {
+    if (S.beliefs.length < 2) return;
+    const q = $('#quote'); q.classList.add('out');
+    setTimeout(() => { qOff++; renderQuote(); q.classList.remove('out'); }, 350);
+  });
+  $('#back').addEventListener('click', () => { cur = todayKey(); follow = true; renderToday(); scrollTo(0, 0); });
+
+  /* ---------- 信念 ---------- */
+  function renderBeliefs() {
+    const box = $('#beliefList'); box.innerHTML = '';
+    S.beliefs.forEach(b => {
+      const el = document.createElement('div'); el.className = 'belief glass';
+      const p = document.createElement('p'); p.textContent = b.text;
+      const meta = document.createElement('div'); meta.className = 'meta';
+      const c = document.createElement('span'); c.textContent = b.n ? `已强化 ${b.n} 次` : '尚未强化';
+      const del = document.createElement('button'); del.textContent = '移除';
+      del.onclick = () => {
+        if (!confirm('移除这条信念？')) return;
+        S.beliefs = S.beliefs.filter(x => x.id !== b.id); persist(); renderBeliefs();
+      };
+      meta.append(c, del); el.append(p, meta); box.append(el);
+    });
+    const done = S.last === todayKey();
+    $('#ctaTitle').textContent = done ? '今日已强化' : '开始强化';
+    $('#ctaSub').textContent = done ? '想再来一遍，随时可以' : '逐条默念 · 长按确认';
+    $('#startRitual').style.display = S.beliefs.length ? '' : 'none';
+  }
+  const nb = $('#newBelief');
+  nb.addEventListener('input', () => grow(nb));
+  $('#addBelief').addEventListener('click', () => {
+    const text = nb.value.trim(); if (!text) { nb.focus(); return; }
+    S.beliefs.push({ id: Date.now().toString(36), text, n: 0 });
+    nb.value = ''; grow(nb); nb.blur(); persist(); renderBeliefs();
+  });
+
+  /* ---------- 强化仪式 ---------- */
+  const ritual = $('#ritual'), rText = $('#rText'), rCount = $('#rCount'), hold = $('#hold');
+  let rIdx = 0, holdT = null;
+  function showR() {
+    rCount.textContent = `${rIdx + 1} / ${S.beliefs.length}`;
+    rText.textContent = S.beliefs[rIdx].text;
+    rText.classList.remove('out');
+  }
+  function openRitual() {
+    if (!S.beliefs.length) return;
+    rIdx = 0; ritual.classList.remove('done'); showR();
+    ritual.classList.add('on'); document.body.classList.add('locked');
+  }
+  function closeRitual() {
+    endHold(); ritual.classList.remove('on'); document.body.classList.remove('locked'); renderBeliefs();
+  }
+  function affirm() {
+    holdT = null; hold.classList.remove('holding');
+    const b = S.beliefs[rIdx]; b.n = (b.n || 0) + 1; S.total = (S.total || 0) + 1; persist();
+    rText.classList.add('out');
+    setTimeout(() => {
+      rIdx++;
+      if (rIdx < S.beliefs.length) return showR();
+      S.last = todayKey(); persist();
+      ritual.classList.add('done');
+      rCount.textContent = '完成';
+      rText.textContent = '今日的信念，已经种下。';
+      rText.classList.remove('out');
+    }, 480);
+  }
+  function startHold(e) {
+    e.preventDefault(); if (holdT) return;
+    hold.classList.add('holding'); holdT = setTimeout(affirm, 1600);
+  }
+  function endHold() {
+    if (!holdT) return;
+    clearTimeout(holdT); holdT = null; hold.classList.remove('holding');
+  }
+  hold.addEventListener('pointerdown', startHold);
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(n => hold.addEventListener(n, endHold));
+  hold.addEventListener('contextmenu', e => e.preventDefault());
+  ritual.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
+  $('#startRitual').addEventListener('click', openRitual);
+  $('#rClose').addEventListener('click', closeRitual);
+  $('#rDone').addEventListener('click', closeRitual);
+
+  /* ---------- 回顾 ---------- */
+  const now = new Date();
+  let calY = now.getFullYear(), calM = now.getMonth();
+  function renderHistory() {
+    $('#sStreak').textContent = streak();
+    $('#sTotal').textContent = Object.keys(S.entries).length;
+    $('#sAff').textContent = S.total || 0;
+    const t = new Date(), tk = todayKey();
+    $('#calTitle').textContent = `${calY} 年 ${calM + 1} 月`;
+    $('#calNext').disabled = calY === t.getFullYear() && calM === t.getMonth();
+    const grid = $('#calGrid'); grid.innerHTML = '';
+    const first = new Date(calY, calM, 1).getDay();
+    const days = new Date(calY, calM + 1, 0).getDate();
+    for (let i = 0; i < first; i++) grid.append(document.createElement('span'));
+    for (let d = 1; d <= days; d++) {
+      const k = `${calY}-${pad(calM + 1)}-${pad(d)}`;
+      const b = document.createElement('button'); b.textContent = d;
+      if (S.entries[k]) b.classList.add('has');
+      if (k === tk) b.classList.add('today');
+      if (k > tk) b.disabled = true;
+      b.onclick = () => { cur = k; follow = k === todayKey(); go('today'); };
+      grid.append(b);
+    }
+  }
+  $('#calPrev').addEventListener('click', () => { if (--calM < 0) { calM = 11; calY--; } renderHistory(); });
+  $('#calNext').addEventListener('click', () => { if (++calM > 11) { calM = 0; calY++; } renderHistory(); });
+
+  $('#exportBtn').addEventListener('click', async () => {
+    persist();
+    const name = `显化日记-${todayKey()}.json`;
+    const blob = new Blob([JSON.stringify(S, null, 2)], { type: 'application/json' });
+    try {
+      const file = new File([blob], name, { type: 'application/json' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file] }); return; }
+    } catch (e) { if (e.name === 'AbortError') return; }
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click();
+  });
+  $('#importBtn').addEventListener('click', () => $('#importFile').click());
+  $('#importFile').addEventListener('change', async e => {
+    const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+    try {
+      const o = JSON.parse(await f.text());
+      if (!o || typeof o.entries !== 'object' || !Array.isArray(o.beliefs)) throw 0;
+      if (!confirm('导入会覆盖当前所有内容，确定继续？')) return;
+      S = Object.assign({ total: 0, last: '' }, o); persist(); renderHistory();
+    } catch (err) { alert('这不是有效的备份文件。'); }
+  });
+
+  /* ---------- 导航 ---------- */
+  const order = ['today', 'beliefs', 'history'];
+  function go(tab) {
+    $$('.view').forEach(v => v.classList.toggle('on', v.id === 'v-' + tab));
+    $$('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.go === tab));
+    $('#pill').style.transform = `translateX(${order.indexOf(tab) * 88}px)`;
+    scrollTo(0, 0);
+    if (tab === 'today') renderToday();
+    if (tab === 'beliefs') renderBeliefs();
+    if (tab === 'history') renderHistory();
+  }
+  $$('#tabs button').forEach(b => b.addEventListener('click', () => {
+    if (b.dataset.go === 'today' && b.classList.contains('on')) { cur = todayKey(); follow = true; }
+    go(b.dataset.go);
+  }));
+
+  document.addEventListener('focusin', e => { if (e.target.tagName === 'TEXTAREA') document.body.classList.add('typing'); });
+  document.addEventListener('focusout', () => document.body.classList.remove('typing'));
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) { if (saveT) persist(); return; }
+    if (follow && cur !== todayKey()) { cur = todayKey(); renderToday(); }
+  });
+  addEventListener('pagehide', () => { if (saveT) persist(); });
+
+  /* ---------- 主屏幕图标 ---------- */
+  try {
+    const c = document.createElement('canvas'); c.width = c.height = 180;
+    const x = c.getContext('2d');
+    x.fillStyle = '#0d0b12'; x.fillRect(0, 0, 180, 180);
+    [[40, 30, 150, 'rgba(216,166,112,.75)'], [160, 170, 140, 'rgba(150,90,150,.6)']].forEach(([cx, cy, r, col]) => {
+      const g = x.createRadialGradient(cx, cy, 0, cx, cy, r);
+      g.addColorStop(0, col); g.addColorStop(1, 'rgba(0,0,0,0)');
+      x.fillStyle = g; x.fillRect(0, 0, 180, 180);
+    });
+    x.fillStyle = '#f3ede2'; x.textAlign = 'center'; x.textBaseline = 'middle';
+    x.font = '400 92px "Songti SC","STSong",serif'; x.fillText('显', 90, 96);
+    const l = document.createElement('link'); l.rel = 'apple-touch-icon'; l.href = c.toDataURL('image/png');
+    document.head.append(l);
+  } catch (e) {}
+
+  renderToday();
+})();
+</script>
+</body>
+</html>
